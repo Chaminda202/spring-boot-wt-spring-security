@@ -58,8 +58,6 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
                                             HttpServletResponse response,
                                             FilterChain chain,
                                             Authentication authResult) throws IOException, ServletException {
-        String secreteKey = "secret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_keysecret_key";
-
         //final LocalDate date = LocalDateTime.now().plusMinutes(15).toLocalDate();
         //token validity period
         long nowMillis = System.currentTimeMillis();

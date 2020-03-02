@@ -40,32 +40,36 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request.getHeader(this.jwtConfig.getAuthorizationHeader());
-        if(Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(this.jwtConfig.getTokenPrefix())){
-            filterChain.doFilter(request, response);
-            return;
-        }
-        String token = authorizationHeader.replace(this.jwtConfig.getTokenPrefix(), "");
-        try{
-            final Jws<Claims> claimsJws = Jwts.parserBuilder()
-                    .setSigningKey(this.secretKey)
-                    .build()
-                    .parseClaimsJws(token);
-            Claims body = claimsJws.getBody();
-            String username = body.getSubject();
-            var authorities = (List<Map<String, String>>)body.get("authorities");
 
-            List<SimpleGrantedAuthority> authority = authorities.stream()
-                    .map(stringStringMap -> new SimpleGrantedAuthority(stringStringMap.get("authority")))
-                    .collect(Collectors.toList());
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    authority
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        }catch (JwtException e){
-            LOGGER.error("Token error "+ e.getMessage());
-            throw new IllegalStateException(String.format("Token %s cannot be trust", token));
+        if(!Strings.isNullOrEmpty(authorizationHeader)){
+            if(!authorizationHeader.startsWith(this.jwtConfig.getTokenPrefix())){
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String token = authorizationHeader.replace(this.jwtConfig.getTokenPrefix(), "");
+            try{
+                final Jws<Claims> claimsJws = Jwts.parserBuilder()
+                        .setSigningKey(this.secretKey)
+                        .build()
+                        .parseClaimsJws(token);
+                Claims body = claimsJws.getBody();
+                String username = body.getSubject();
+                var authorities = (List<Map<String, String>>)body.get("authorities");
+
+                List<SimpleGrantedAuthority> authority = authorities.stream()
+                        .map(stringStringMap -> new SimpleGrantedAuthority(stringStringMap.get("authority")))
+                        .collect(Collectors.toList());
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        authority
+                );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }catch (JwtException e){
+                LOGGER.error("Token error "+ e.getMessage());
+                throw new IllegalStateException(String.format("Token %s cannot be trust", token));
+            }
         }
         filterChain.doFilter(request, response);
     }
